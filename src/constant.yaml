@@ -1,26 +1,24 @@
-motor_radius: 1.0
-motor_induction: 1.0
-motor_resistance: 1.0
-motor_inertia: 1.0
-motor_constant: 1.0
+r_m: 10.0
+L_m: 0.5e-3
+R_m: 10.0
+J_m: 1.0e-6
+K_m: 0.1
 
+R_n: 1.0
+R_t_n: 1.0
+C_t_n: 1.0
+C_n: 1.0
 
-nozzle_resistor: 1.0
-nozzle_thermal_resistance: 1.0
-nozzle_thermal_capacity: 1.0
-nozzle_capacitor: 1.0
+m: 1.0
+mu_r: 1.0
+mu_l_x: 1.0
+mu_l_y: 1.0
 
+T_n: 220.0
+T_b: 60.0
+T_e: 21.0
 
-tool_head_mass: 1.0
-friction_rolling: 1.0
-friction_linear_x: 1.0
-friction_linear_y: 1.0
+d_x: 256.0
+d_y: 256.0
 
-target_nozzle_temp_c: 220.0
-target_bed_temp_c: 60.0
-env_temp: 21.0
-
-
-print_area_x_mm: 256.0
-print_area_y_mm: 256.0
 
