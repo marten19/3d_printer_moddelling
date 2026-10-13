@@ -7,11 +7,15 @@ class State(object):
     def __init__(self):
         print('Processing current state:', str(self))
 
-    def on_event(self, event):
+    def on_event(self, printer, event):
         """
         Handle events that are delegated to this State.
         """
         pass
+    
+    def on_tick(self, printer):
+        return self
+
 
     def __repr__(self):
         """
