@@ -83,10 +83,12 @@ cos_omega_t = np.cos(omega * t)
 
 K = 1
 
+x = K * (12 * sin_omega_t - 4 * np.sin(3 * omega * t))
 d_x = K * omega * (12 * cos_omega_t - 12 * np.cos(3 * omega * t))
 dd_x = K * omega**2 * (-12 * sin_omega_t + 36 * np.sin(3 * omega * t))
 ddd_x = K * omega**3 * (-12 * cos_omega_t + 108 * np.cos(3 * omega * t))
 
+y = K * (13 * cos_omega_t -5 * np.cos(2 * omega * t) -2 * np.cos(3 * omega * t) - np.cos(4 * omega * t))
 d_y = (
     K
     * omega
@@ -138,10 +140,12 @@ t_out, y_out = ct.forced_response(corexy, T=t, U=U_ellipse, X0=x_0)
 theta_l = y_out[0, :]
 theta_r = y_out[1, :]
 
-x, y = to_corexy(theta_l, theta_r, c["r_m"])
+x_, y_ = to_corexy(theta_l, theta_r, c["r_m"])
 
 plt.figure(figsize=(6, 6))
-plt.plot(x, y, label="Toolhead Path")
+# plt.plot(x, y, label="Toolhead Path")
+plt.plot(x_, y_, label="CoreXY Path")
+
 plt.xlabel("X [mm]")
 plt.ylabel("Y [mm]")
 plt.axis("equal")
