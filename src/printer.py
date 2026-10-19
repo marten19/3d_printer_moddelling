@@ -13,7 +13,7 @@ class Printer(object):
     high level.
     """
     t = 0
-    dt = 100
+    dt = 0.01
     filament_loaded_flag = False
     filament_retracted_flag = False
     filament_empty_flag = False
@@ -22,7 +22,7 @@ class Printer(object):
     temperature = 200
     x = np.zeros(6)
     u = np.ones(2)
-    y = 5
+    # y = 5
     simulation_events = []
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
@@ -89,9 +89,11 @@ class Printer(object):
 
     def run(self):
         while True:
-            self.process_sim_events()
-            time.sleep(0.1)
-            self.tick()
+            self.step()
+            self.feedback()
+            # self.process_sim_events()
+            # time.sleep(0.1)
+            # self.tick()
     
     def sys(self, t, x, u):
         dx = self.A @ x + self.B @ u
@@ -102,13 +104,28 @@ class Printer(object):
                         args=(self.u,), method="LSODA")
         self.x = sol.y[:, -1]
         self.t += self.dt
+        print(to_corexy(self.x[0], self.x[1], self.c["r_m"]))
+        
+    def feedback(self, x, y, kp = 1):
+        # For now ill try with a p controller
+        theta_l , theta_r = to_motor(x , y, self.c["r_m"])
+        e_l = theta_l - self.x[0]
+        e_r = theta_r - self.x[1]
+        self.u = np.array([kp * e_l, kp * e_r])
+        
+        
+        
+        
+        
+        
         
 if __name__ == "__main__":
     printer = Printer()
-    printer.step()
-    printer.step()
+    for i in range(100000):
+        printer.feedback(0.2,0.1)
+        printer.step()
     
-    printer.add_sim_event("C", True, time.time() + 1)
-    printer.add_sim_event("F", True, time.time() + 20)
+    # printer.add_sim_event("C", True, time.time() + 1)
+    # printer.add_sim_event("F", True, time.time() + 20)
 
-    printer.run()
+    # printer.run()
