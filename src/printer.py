@@ -6,27 +6,32 @@ import matplotlib.pyplot as plt
 from src.kinematics import *
 from scipy.integrate import solve_ivp
 
+
 class Printer(object):
     """
     A simple state machine that mimics the functionality of a device from a
     high level.
     """
+
     t = 0
-    dt = 0.01
+    dt = 0.1
     filament_loaded_flag = False
     filament_retracted_flag = False
     filament_empty_flag = False
     filament_color_change_flag = False
     wiping_done = False
-    target_points = [(100, 0), (100, 100), (0, 100), (0, 0)]
+    h_flag = False
+    v_flag = False
+    target_points = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
     visited_points = []
-    temperature = 200
-    x = np.zeros(6)
-    u = np.ones(2)
-    # y = 5
+    # temperature = 200
+    x = np.zeros(9)
+    u = np.ones(3)
     simulation_events = []
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
+    t_target_on = c["T_n"]
+    t_target_off = 40
     A = np.array(
         [
             [0, 0, 1, 0, 0, 0],
@@ -38,8 +43,9 @@ class Printer(object):
         ]
     )
 
-    B = np.array([[0, 0], [0, 0], [0, 0], [0, 0], [1.0 / c["L_m"], 0], [0, 1.0 / c["L_m"]]])
-
+    B = np.array(
+        [[0, 0], [0, 0], [0, 0], [0, 0], [1.0 / c["L_m"], 0], [0, 1.0 / c["L_m"]]]
+    )
 
     def __init__(self):
         self.state = PrintingState()
@@ -53,7 +59,7 @@ class Printer(object):
 
     def get_temperature(self):
         return self.temperature
-    
+
     def get_x(self):
         return to_corexy(self.x[0], self.x[1], self.c["r_m"])[0]
 
@@ -74,8 +80,6 @@ class Printer(object):
             self.filament_retracted_flag = value
         elif event == "loaded":
             self.filament_loaded_flag = value
-        elif event == "temperature":
-            self.temperature = value
 
 
     def process_sim_events(self):
@@ -91,49 +95,80 @@ class Printer(object):
             self.tick()
             self.add_telemetry()
 
-
     def add_telemetry(self):
         x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
-        self.visited_points.append([x, y])
+        temp = self.x[6]
+        self.visited_points.append([x, y, temp, self.t])
 
     def plot(self):
         pts = np.array(self.visited_points)
-        plt.plot(pts[:, 0], pts[:, 1])
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+        ax1.plot(pts[:, 0], pts[:, 1])
+        ax2.plot(pts[:, 3], pts[:, 2])
         plt.show()
 
-        
     def sys(self, t, x, u):
-        dx = self.A @ x + self.B @ u
+        # dx = self.A @ x + self.B @ u
+        dx = np.zeros(9)
+        dx[:6] = self.A @ x[:6] + self.B @ u[:2]
+        T, v, i = x[6], x[7], x[8]
+        dx[6] = v**2 / (self.c["C_t_n"] * self.c["R_n"]) - (T - self.c["T_e"]) / (
+            self.c["C_t_n"] * self.c["R_t_n"]
+        )
+        dx[7] = i / self.c["C_n"] - v / (self.c["C_n"] * self.c["R_n"])
+        dx[8] = u[2] / self.c["L_n"] - v / self.c["L_n"]
         return dx
-    
+
     def step(self):
-        sol = solve_ivp(self.sys, (self.t, self.t + self.dt), self.x,
-                        args=(self.u,), method="LSODA")
+        sol = solve_ivp(
+            self.sys, (self.t, self.t + self.dt), self.x, args=(self.u,), method="LSODA"
+        )
         self.x = sol.y[:, -1]
         self.t += self.dt
-        # print(self.t, to_corexy(self.x[0], self.x[1], self.c["r_m"]))
-        
-    def feedback(self, x_ref, y_ref, kp = 0.1):
+        self.printbed_guard()
+
+    def printbed_guard(self):
+        self.h_flag = False
+        self.v_flag = False
+        x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
+        x_guard = np.clip(x, 0, self.c["d_x"])
+        y_guard = np.clip(y, 0, self.c["d_y"])
+        if x != x_guard or y != y_guard:
+            self.x[0], self.x[1] = to_motor(x_guard, y_guard, self.c["r_m"])
+            vel_x, vel_y = to_corexy(self.x[2], self.x[3], self.c["r_m"])
+            if x != x_guard:
+                vel_x = 0
+                self.v_flag = True
+            if y != y_guard:
+                vel_y = 0
+                self.h_flag = True
+            self.x[2], self.x[3] = to_motor(vel_x, vel_y, self.c["r_m"])
+            
+    def feedback(self, x_ref, y_ref, heating, kp=0.1):
         # For now ill try with a p controller
-        theta_l , theta_r = to_motor(x_ref , y_ref, self.c["r_m"])
+        theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
-        self.u = np.array([kp * e_l, kp * e_r])
-        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3
-    
-        
-    
-        
-        
-        
-        
-        
-        
-        
+
+        heating_value = 0
+        temp_at_target = False
+        if heating:
+            if self.x[6] < self.t_target_on:
+                heating_value = 40
+            else:
+                temp_at_target = True
+        else:
+            if self.x[6] < self.t_target_off:
+                temp_at_target = True
+
+        self.u = np.array([kp * e_l, kp * e_r, heating_value])
+        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3 and temp_at_target
+
+
 if __name__ == "__main__":
     printer = Printer()
     printer.add_sim_event("C", True, printer.t + 20)
-    # printer.add_sim_event("F", True, time.time() + 20)
+    printer.add_sim_event("F", True, printer.t + 100)
 
     printer.run(200)
     printer.plot()

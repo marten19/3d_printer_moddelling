@@ -14,10 +14,10 @@ class PrintingState(State):
         elif printer.filament_empty_flag:
             printer.filament_empty_flag = False
             return StopCState()
-        elif printer.feedback(printer.target_points[0][0],printer.target_points[0][1]):
+        elif printer.feedback(printer.target_points[0][0], printer.target_points[0][1], True):
             return NextPointState()
         return self
-    
+
 
 class NextPointState(State):
     def on_tick(self, printer):
@@ -25,13 +25,14 @@ class NextPointState(State):
         if len(printer.target_points) >= 1:
             return PrintingState()
         return StopIdleState()
-        
+
+
 class StopIdleState(State):
     def on_tick(self, printer):
-            if not printer.feedback(0,0) or len(printer.target_points) < 1:
-                return self
-            return PrintingState()
-              
+        if not printer.feedback(0, 0, False) or len(printer.target_points) < 1:
+            return self
+        return PrintingState()
+
 
 class StopCState(State):
     def on_tick(self, printer):
@@ -49,13 +50,16 @@ class StopFState(State):
 
 class ToTowerCState(State):
     def on_tick(self, printer):
-        if printer.feedback(0.0, 0.0):
+        printer.feedback(-100, -100, True)
+        if printer.h_flag and printer.v_flag:
             return WipingCState()
         return self
 
+
 class ToTowerFState(State):
     def on_tick(self, printer):
-        if printer.feedback(0.0, 0.0):
+        printer.feedback(-100, -100, True)
+        if printer.h_flag and printer.f_vlag:
             return WipingFState()
         return self
 
@@ -69,7 +73,6 @@ class WipingCState(State):
             printer.wiping_done = False
             return RetractFilamentState()
         return self
-        
 
 
 class WipingFState(State):
@@ -94,11 +97,8 @@ class RetractFilamentState(State):
 
 
 class CoolingNozzleState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("temperature", 20, printer.t + 1)
-
     def on_tick(self, printer):
-        if printer.get_temperature() <= 30:
+        if printer.feedback(0.0, 0.0, False):
             return LoadFilamentState()
         return self
 
@@ -114,17 +114,14 @@ class LoadFilamentState(State):
 
 
 class HeatingNozzleState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("temperature", 220, printer.t + 1)
-
     def on_tick(self, printer):
-        if printer.get_temperature() >= 220:
+        if printer.feedback(0.0, 0.0, True):
             return ResumeState()
         return self
 
 
 class ResumeState(State):
     def on_tick(self, printer):
-        if printer.feedback(printer.x_saved,printer.y_saved):
+        if printer.feedback(printer.x_saved, printer.y_saved, True):
             return PrintingState()
         return self
