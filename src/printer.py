@@ -128,7 +128,7 @@ class Printer(object):
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
         self.u = np.array([kp * e_l, kp * e_r])
-        return e_l < 1e-3 and e_r < 1e-3
+        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3
     
         
     
