@@ -24,14 +24,16 @@ class Printer(object):
     v_flag = False
     target_points = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
     visited_points = []
-    # temperature = 200
     x = np.zeros(9)
     u = np.ones(3)
     simulation_events = []
+    filament_used = 0
+    
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
     t_target_on = c["T_n"]
     t_target_off = 40
+    
     A = np.array(
         [
             [0, 0, 1, 0, 0, 0],
@@ -98,13 +100,15 @@ class Printer(object):
     def add_telemetry(self):
         x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
         temp = self.x[6]
-        self.visited_points.append([x, y, temp, self.t])
+        self.visited_points.append([x, y, temp, self.t, self.filament_used])
+        
 
     def plot(self):
         pts = np.array(self.visited_points)
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 4))
         ax1.plot(pts[:, 0], pts[:, 1])
         ax2.plot(pts[:, 3], pts[:, 2])
+        ax3.plot(pts[:, 3], pts[:, 4])
         plt.show()
 
     def sys(self, t, x, u):
@@ -126,6 +130,7 @@ class Printer(object):
         self.x = sol.y[:, -1]
         self.t += self.dt
         self.printbed_guard()
+        self.filament_usage()
 
     def printbed_guard(self):
         self.h_flag = False
@@ -143,7 +148,15 @@ class Printer(object):
                 vel_y = 0
                 self.h_flag = True
             self.x[2], self.x[3] = to_motor(vel_x, vel_y, self.c["r_m"])
-            
+    
+    # not extremly accurate since it might not actually be in Printing state at that point but step -1 or +1
+    def filament_usage(self):
+        if isinstance(self.state, PrintingState) and len(self.visited_points) > 2:
+            x0, y0 = self.visited_points[-2][:2]
+            x1, y1 = self.visited_points[-1][:2]
+            self.filament_used += np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
+        
+        
     def feedback(self, x_ref, y_ref, heating, kp=0.1):
         # For now ill try with a p controller
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
