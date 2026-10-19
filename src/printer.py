@@ -19,6 +19,8 @@ class Printer(object):
     filament_empty_flag = False
     filament_color_change_flag = False
     wiping_done = False
+    target_points = [(0.1, 0.0), (0.1, 0.1), (0.0, 0.1), (0.0, 0.0)]
+    
     temperature = 200
     x = np.zeros(6)
     u = np.ones(2)
@@ -90,10 +92,11 @@ class Printer(object):
     def run(self):
         while True:
             self.step()
-            self.feedback()
+            print(self.target_points)
+            # self.feedback()
             # self.process_sim_events()
             # time.sleep(0.1)
-            # self.tick()
+            self.tick()
     
     def sys(self, t, x, u):
         dx = self.A @ x + self.B @ u
@@ -113,6 +116,11 @@ class Printer(object):
         e_r = theta_r - self.x[1]
         self.u = np.array([kp * e_l, kp * e_r])
         
+        return e_l < 1e-3 and e_r < 1e-3
+    
+        
+    
+        
         
         
         
@@ -121,11 +129,11 @@ class Printer(object):
         
 if __name__ == "__main__":
     printer = Printer()
-    for i in range(100000):
-        printer.feedback(0.2,0.1)
-        printer.step()
+    # for i in range(100000):
+    #     printer.feedback(0.2,0.1)
+    #     printer.step()
     
     # printer.add_sim_event("C", True, time.time() + 1)
     # printer.add_sim_event("F", True, time.time() + 20)
 
-    # printer.run()
+    printer.run()

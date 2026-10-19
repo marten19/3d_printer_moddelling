@@ -15,9 +15,18 @@ class PrintingState(State):
         elif printer.filament_empty_flag:
             printer.filament_empty_flag = False
             return StopCState()
+        elif printer.feedback(printer.target_points[0][0],printer.target_points[0][1]):
+            return NextPointState()
         return self
 
-
+class NextPointState(State):
+    def on_tick(self, printer):
+        if len(printer.target_points) > 1:
+            printer.target_points = printer.target_points[1:]
+            return PrintingState()
+        return StopCState()
+        
+        
 class StopCState(State):
     def on_tick(self, printer):
         printer.x_saved = printer.get_x()
