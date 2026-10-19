@@ -1,6 +1,5 @@
 import numpy as np
 from src.printer_states import *
-import time
 import control as ct
 import yaml
 import matplotlib.pyplot as plt
@@ -19,9 +18,8 @@ class Printer(object):
     filament_empty_flag = False
     filament_color_change_flag = False
     wiping_done = False
-    target_points = [(0.1, 0.0), (0.1, 0.1), (0.0, 0.1), (0.0, 0.0)]
+    target_points = [(100, 0), (100, 100), (0, 100), (0, 0)]
     visited_points = []
-    
     temperature = 200
     x = np.zeros(6)
     u = np.ones(2)
@@ -55,15 +53,15 @@ class Printer(object):
 
     def get_temperature(self):
         return self.temperature
-
+    
     def get_x(self):
-        return self.x[0]
+        return to_corexy(self.x[0], self.x[1], self.c["r_m"])[0]
 
     def get_y(self):
-        return self.x[1]
+        return to_corexy(self.x[0], self.x[1], self.c["r_m"])[1]
 
     def add_sim_event(self, event, value, time_delay):
-        self.simulation_events.append((event, value, time_delay / 10))
+        self.simulation_events.append((event, value, time_delay))
 
     def on_event(self, event, value):
         if event == "C":
@@ -78,35 +76,28 @@ class Printer(object):
             self.filament_loaded_flag = value
         elif event == "temperature":
             self.temperature = value
-        elif event == "x":
-            self.x = value
-        elif event == "y":
-            self.y = value
+
 
     def process_sim_events(self):
-        t = time.time()
         for event, value, time_delay in self.simulation_events:
-            if t >= time_delay:
+            if self.t >= time_delay:
                 self.on_event(event, value)
                 self.simulation_events.remove((event, value, time_delay))
 
     def run(self, duration):
         while self.t < duration:
-            # print(self.t)
             self.step()
-            # self.feedback()
-            # self.process_sim_events()
-            # time.sleep(0.1)
+            self.process_sim_events()
             self.tick()
             self.add_telemetry()
-            # if printer.state = 
+
 
     def add_telemetry(self):
         x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
         self.visited_points.append([x, y])
 
     def plot(self):
-        pts = np.array(self.visited_points) * 1000   # m -> mm
+        pts = np.array(self.visited_points)
         plt.plot(pts[:, 0], pts[:, 1])
         plt.show()
 
@@ -120,11 +111,11 @@ class Printer(object):
                         args=(self.u,), method="LSODA")
         self.x = sol.y[:, -1]
         self.t += self.dt
-        # print(to_corexy(self.x[0], self.x[1], self.c["r_m"]))
+        # print(self.t, to_corexy(self.x[0], self.x[1], self.c["r_m"]))
         
-    def feedback(self, x, y, kp = 0.1):
+    def feedback(self, x_ref, y_ref, kp = 0.1):
         # For now ill try with a p controller
-        theta_l , theta_r = to_motor(x , y, self.c["r_m"])
+        theta_l , theta_r = to_motor(x_ref , y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
         self.u = np.array([kp * e_l, kp * e_r])
@@ -141,11 +132,7 @@ class Printer(object):
         
 if __name__ == "__main__":
     printer = Printer()
-    # for i in range(100000):
-    #     printer.feedback(0.2,0.1)
-    #     printer.step()
-    
-    # printer.add_sim_event("C", True, time.time() + 1)
+    printer.add_sim_event("C", True, printer.t + 20)
     # printer.add_sim_event("F", True, time.time() + 20)
 
     printer.run(200)
