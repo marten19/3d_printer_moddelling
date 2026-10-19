@@ -20,6 +20,7 @@ class Printer(object):
     filament_color_change_flag = False
     wiping_done = False
     target_points = [(0.1, 0.0), (0.1, 0.1), (0.0, 0.1), (0.0, 0.0)]
+    visited_points = []
     
     temperature = 200
     x = np.zeros(6)
@@ -56,10 +57,10 @@ class Printer(object):
         return self.temperature
 
     def get_x(self):
-        return self.x
+        return self.x[0]
 
     def get_y(self):
-        return self.y
+        return self.x[1]
 
     def add_sim_event(self, event, value, time_delay):
         self.simulation_events.append((event, value, time_delay / 10))
@@ -89,15 +90,27 @@ class Printer(object):
                 self.on_event(event, value)
                 self.simulation_events.remove((event, value, time_delay))
 
-    def run(self):
-        while True:
+    def run(self, duration):
+        while self.t < duration:
+            # print(self.t)
             self.step()
-            print(self.target_points)
             # self.feedback()
             # self.process_sim_events()
             # time.sleep(0.1)
             self.tick()
-    
+            self.add_telemetry()
+            # if printer.state = 
+
+    def add_telemetry(self):
+        x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
+        self.visited_points.append([x, y])
+
+    def plot(self):
+        pts = np.array(self.visited_points) * 1000   # m -> mm
+        plt.plot(pts[:, 0], pts[:, 1])
+        plt.show()
+
+        
     def sys(self, t, x, u):
         dx = self.A @ x + self.B @ u
         return dx
@@ -107,15 +120,14 @@ class Printer(object):
                         args=(self.u,), method="LSODA")
         self.x = sol.y[:, -1]
         self.t += self.dt
-        print(to_corexy(self.x[0], self.x[1], self.c["r_m"]))
+        # print(to_corexy(self.x[0], self.x[1], self.c["r_m"]))
         
-    def feedback(self, x, y, kp = 1):
+    def feedback(self, x, y, kp = 0.1):
         # For now ill try with a p controller
         theta_l , theta_r = to_motor(x , y, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
         self.u = np.array([kp * e_l, kp * e_r])
-        
         return e_l < 1e-3 and e_r < 1e-3
     
         
@@ -136,4 +148,5 @@ if __name__ == "__main__":
     # printer.add_sim_event("C", True, time.time() + 1)
     # printer.add_sim_event("F", True, time.time() + 20)
 
-    printer.run()
+    printer.run(200)
+    printer.plot()

@@ -18,15 +18,22 @@ class PrintingState(State):
         elif printer.feedback(printer.target_points[0][0],printer.target_points[0][1]):
             return NextPointState()
         return self
+    
 
 class NextPointState(State):
     def on_tick(self, printer):
-        if len(printer.target_points) > 1:
-            printer.target_points = printer.target_points[1:]
+        printer.target_points.pop(0)
+        if len(printer.target_points) >= 1:
             return PrintingState()
-        return StopCState()
+        return StopIdleState()
         
-        
+class StopIdleState(State):
+    def on_tick(self, printer):
+            if not printer.feedback(0,0) or len(printer.target_points) < 1:
+                return self
+            return PrintingState()
+              
+
 class StopCState(State):
     def on_tick(self, printer):
         printer.x_saved = printer.get_x()
@@ -42,23 +49,22 @@ class StopFState(State):
 
 
 class ToTowerCState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("x", 0, time.time() + 2)
-        printer.add_sim_event("y", 0, time.time() + 3)
+    # def on_enter(self, printer):
+    #     printer.add_sim_event("x", 0, time.time() + 2)
+    #     printer.add_sim_event("y", 0, time.time() + 3)
 
     def on_tick(self, printer):
-        if printer.get_x() == 0 and printer.get_y() == 0:
+        if printer.feedback(0.0, 0.0):
             return WipingCState()
         return self
 
-
 class ToTowerFState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("x", 0, time.time() + 2)
-        printer.add_sim_event("y", 0, time.time() + 3)
+    # def on_enter(self, printer):
+    #     printer.add_sim_event("x", 0, time.time() + 2)
+    #     printer.add_sim_event("y", 0, time.time() + 3)
 
     def on_tick(self, printer):
-        if printer.get_x() == 0 and printer.get_y() == 0:
+        if printer.feedback(0.0, 0.0):
             return WipingFState()
         return self
 
@@ -68,10 +74,13 @@ class WipingCState(State):
         printer.add_sim_event("wiping_done", True, time.time() + 1)
 
     def on_tick(self, printer):
-        if printer.wiping_done:
-            printer.wiping_done = False
-            return RetractFilamentState()
-        return self
+        # if printer.wiping_done:
+        #     printer.wiping_done = False
+        #     return RetractFilamentState()
+        # return self
+    
+        return RetractFilamentState()
+    
 
 
 class WipingFState(State):
