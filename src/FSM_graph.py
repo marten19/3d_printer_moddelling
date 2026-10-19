@@ -30,7 +30,6 @@ machine.add_transition("wiping_done", "wiping_c", "retract_filament")
 machine.add_transition("F", "printing", "stop_f")
 machine.add_transition("pos saved", "stop_f", "to_tower_f")
 machine.add_transition("x=0, y=0", "to_tower_f", "wiping_f")
-# machine.add_transition("wiping_done", "wiping_f", "retract_filament")
 machine.add_transition("wiping_done", "wiping_f", "cooling_nozzle")
 
 machine.add_transition("retracted", "retract_filament", "cooling_nozzle")
