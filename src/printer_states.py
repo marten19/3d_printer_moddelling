@@ -9,40 +9,68 @@ class PrintingState(State):
     """
 
     def on_tick(self, printer):
-        if printer.filament_empty_flag or printer.filament_color_change_flag:
-            return StoppedState()
+        if printer.filament_color_change_flag:
+            printer.filament_color_change_flag = False
+            return StopCState()
+        elif printer.filament_empty_flag:
+            printer.filament_empty_flag = False
+            return StopCState()
         return self
 
 
-class StoppedState(State):
+class StopCState(State):
     def on_tick(self, printer):
         printer.x_saved = printer.get_x()
         printer.y_saved = printer.get_y()
-        return ToTowerState()
+        return ToTowerCState()
 
 
-class ToTowerState(State):
+class StopFState(State):
+    def on_tick(self, printer):
+        printer.x_saved = printer.get_x()
+        printer.y_saved = printer.get_y()
+        return ToTowerFState()
+
+
+class ToTowerCState(State):
     def on_enter(self, printer):
         printer.add_sim_event("x", 0, time.time() + 2)
         printer.add_sim_event("y", 0, time.time() + 3)
 
     def on_tick(self, printer):
         if printer.get_x() == 0 and printer.get_y() == 0:
-            return WipingState()
+            return WipingCState()
         return self
 
 
-class WipingState(State):
+class ToTowerFState(State):
+    def on_enter(self, printer):
+        printer.add_sim_event("x", 0, time.time() + 2)
+        printer.add_sim_event("y", 0, time.time() + 3)
+
+    def on_tick(self, printer):
+        if printer.get_x() == 0 and printer.get_y() == 0:
+            return WipingFState()
+        return self
+
+
+class WipingCState(State):
     def on_enter(self, printer):
         printer.add_sim_event("wiping_done", True, time.time() + 1)
 
     def on_tick(self, printer):
-        if printer.filament_color_change_flag and printer.wiping_done:
-            printer.filament_color_change_flag = False
+        if printer.wiping_done:
             printer.wiping_done = False
             return RetractFilamentState()
-        elif printer.filament_empty_flag and printer.wiping_done:
-            printer.filament_empty_flag = False
+        return self
+
+
+class WipingFState(State):
+    def on_enter(self, printer):
+        printer.add_sim_event("wiping_done", True, time.time() + 1)
+
+    def on_tick(self, printer):
+        if printer.wiping_done:
             printer.wiping_done = False
             return CoolingNozzleState()
         return self
