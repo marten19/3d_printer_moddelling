@@ -1,6 +1,3 @@
-import numpy as np
-
-
 def to_corexy(theta_l, theta_r, r_m):
     x = (theta_l + theta_r) * r_m / 2
     y = (theta_l - theta_r) * r_m / 2
