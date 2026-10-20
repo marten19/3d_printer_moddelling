@@ -1,5 +1,6 @@
 from src.printer import *
 from src.dynamics import *
+import argparse
 
 SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
 
@@ -17,17 +18,31 @@ def sim_square_empty_filament():
     printer.filament_on_roll = 150
     printer.run(300)
     printer.plot()
-    
+
+
 def ellipse_input_response():
     U, X0 = ellipse_input()
-    input_response(U,X0)
+    input_response(U, X0)
+
 
 def heart_input_response():
     U, X0 = heart_input()
-    input_response(U,X0)
-    
+    input_response(U, X0)
+
+
 if __name__ == "__main__":
-    ellipse_input_response()
-    heart_input_response()
-    # sim_square()
-    sim_square_empty_filament()
+    parser = argparse.ArgumentParser(description="Run one simulation")
+    parser.add_argument(
+        "-run", required=True, choices=["square", "square_empty", "ellipse", "heart"]
+    )
+    args = parser.parse_args()
+
+    match args.run:
+        case "square":
+            sim_square()
+        case "square_empty":
+            sim_square_empty_filament()
+        case "ellipse":
+            ellipse_input_response()
+        case "heart":
+            heart_input_response()
