@@ -32,7 +32,7 @@ sin_omega_t = np.sin(omega * t)
 cos_omega_t = np.cos(omega * t)
 
 
-def ellipse_input(K = 1, L = 3):
+def ellipse_input(K=1, L=3):
     d_x = -K * omega * sin_omega_t
     dd_x = -K * omega**2 * cos_omega_t
     ddd_x = K * omega**3 * sin_omega_t
@@ -117,7 +117,8 @@ def heart_input():
     i_l_0 = (J_eq / c["K_m"]) * (41 * K * omega**2) / c["r_m"]
     i_r_0 = -(J_eq / c["K_m"]) * (41 * K * omega**2) / c["r_m"]
     X0 = np.array([theta_l_0, theta_r_0, omega_l_0, omega_r_0, i_l_0, i_r_0])
-    return U_ellipse , X0 
+    return U_ellipse, X0
+
 
 def input_response(U, X0):
     _, y_out = ct.forced_response(corexy, T=t, U=U, X0=X0)
@@ -139,4 +140,4 @@ def input_response(U, X0):
 if __name__ == "__main__":
     # U, X0 = ellipse_input(1,3)
     U, X0 = heart_input()
-    input_response(U,X0)
+    input_response(U, X0)

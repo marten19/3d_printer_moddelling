@@ -58,16 +58,19 @@ subcomments = {
 graph = machine.get_graph()
 
 ACCEPTING = {"printing"}
- 
+
 graph = machine.get_graph()
 graph.graph_attr["rankdir"] = "LR"
- 
+
 if hasattr(graph, "get_node"):
     for name, text in subcomments.items():
         graph.get_node(name).attr.update(
-            label=text, shape="box",
+            label=text,
+            shape="box",
             peripheries="2" if name in ACCEPTING else "1",
-            style="rounded,filled", fillcolor="white", color="black",
+            style="rounded,filled",
+            fillcolor="white",
+            color="black",
         )
     graph.add_node("start", label="", shape="none", width="0", height="0")
     graph.add_edge("start", "printing", label="start")
@@ -75,12 +78,16 @@ if hasattr(graph, "get_node"):
 else:
     for name, text in subcomments.items():
         graph.node(
-            name, label=text, shape="box",
+            name,
+            label=text,
+            shape="box",
             peripheries="2" if name in ACCEPTING else "1",
-            style="rounded,filled", fillcolor="white", color="black",
+            style="rounded,filled",
+            fillcolor="white",
+            color="black",
         )
     graph.node("start", label="", shape="none", width="0", height="0")
     graph.edge("start", "printing", label="start")
     graph.render("fsm_model", format="png", cleanup=True)
- 
+
 print("Saved FSM diagram to fsm_model.png")

@@ -31,10 +31,12 @@ def heart_input_response():
     input_response(U, X0)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run one simulation")
     parser.add_argument(
-        "-run", required=True, choices=["square", "square_empty", "ellipse", "heart", "pde"]
+        "-run",
+        required=True,
+        choices=["square", "square_empty", "ellipse", "heart", "pde"],
     )
     args = parser.parse_args()
 
@@ -49,3 +51,7 @@ if __name__ == "__main__":
             heart_input_response()
         case "pde":
             pde_sim()
+
+
+if __name__ == "__main__":
+    main()

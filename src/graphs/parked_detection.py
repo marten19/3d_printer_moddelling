@@ -23,17 +23,20 @@ subcomments = {
 }
 
 ACCEPTING = {"q3"}
- 
+
 graph = machine.get_graph()
 # graph.graph_attr["rankdir"] = "LR"
- 
+
 if hasattr(graph, "get_node"):
     for name, text in subcomments.items():
         node = graph.get_node(name)
         node.attr.update(
-            label=text, shape="circle",
+            label=text,
+            shape="circle",
             peripheries="2" if name in ACCEPTING else "1",
-            style="filled", fillcolor="white", color="black",
+            style="filled",
+            fillcolor="white",
+            color="black",
         )
     graph.add_node("start", label="", shape="none", width="0", height="0")
     graph.add_edge("start", "q0", label="start")
@@ -41,13 +44,16 @@ if hasattr(graph, "get_node"):
 else:
     for name, text in subcomments.items():
         graph.node(
-            name, label=text, shape="circle",
+            name,
+            label=text,
+            shape="circle",
             peripheries="2" if name in ACCEPTING else "1",
-            style="filled", fillcolor="white", color="black",
+            style="filled",
+            fillcolor="white",
+            color="black",
         )
     graph.node("start", label="", shape="none", width="0", height="0")
     graph.edge("start", "q0", label="start")
     graph.render("parked_model", format="png", cleanup=True)
- 
+
 print("Saved FSM diagram to parked_model.png")
- 

@@ -14,7 +14,9 @@ class PrintingState(State):
         elif printer.filament_empty_flag:
             printer.filament_empty_flag = False
             return StopCState()
-        elif printer.feedback(printer.target_points[0][0], printer.target_points[0][1], True):
+        elif printer.feedback(
+            printer.target_points[0][0], printer.target_points[0][1], True
+        ):
             return NextPointState()
         return self
 
@@ -62,7 +64,7 @@ class ToTowerCState(State):
 class ToTowerFState(State):
     def on_enter(self, printer):
         printer.homing_flags_reset()
-        
+
     def on_tick(self, printer):
         printer.feedback(-100, -100, True)
         if printer.h_flag and printer.v_flag:

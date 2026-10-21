@@ -31,8 +31,8 @@ Volume = dx * a * a
 A = a * a
 
 num_points = int(length / dx)
-num_step = int(time_sim/dt)
-plot_step = int(num_step/plot_num_lines)
+num_step = int(time_sim / dt)
+plot_step = int(num_step / plot_num_lines)
 
 
 def pde_sim():
@@ -60,11 +60,15 @@ def pde_sim():
             x = np.arange(len(T)) * dx * 1000
             plt.plot(x, T, label=f"t = {step * dt} s")
         step += 1
-        
+
         if T.max() - T.min() < 1 and len(T) >= num_points:
-            print("Simulation stopped, filament cooled down at t: ",step*dt, "s")
+            print("Simulation stopped, filament cooled down at t: ", step * dt, "s")
             break
 
     plt.title("Filament temperature")
     plt.legend()
     plt.show()
+
+
+if __name__ == "__main__":
+    pde_sim()

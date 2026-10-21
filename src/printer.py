@@ -1,9 +1,8 @@
 import numpy as np
 from src.printer_states import *
-import control as ct
+from src.kinematics import *
 import yaml
 import matplotlib.pyplot as plt
-from src.kinematics import *
 from scipy.integrate import solve_ivp
 
 
@@ -12,6 +11,7 @@ class Printer(object):
     A simple state machine that mimics the functionality of a device from a
     high level.
     """
+
     t = 0
     dt = 0.01
     filament_loaded_flag = False
@@ -27,12 +27,12 @@ class Printer(object):
     u = np.ones(3)
     simulation_events = []
     filament_on_roll = 1000
-    
+
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
     t_target_on = c["T_n"]
     t_target_off = 40
-    
+
     A = np.array(
         [
             [0, 0, 1, 0, 0, 0],
@@ -82,7 +82,6 @@ class Printer(object):
         elif event == "loaded":
             self.filament_loaded_flag = value
 
-
     def process_sim_events(self):
         for event, value, time_delay in self.simulation_events:
             if self.t >= time_delay:
@@ -102,7 +101,6 @@ class Printer(object):
         x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
         temp = self.x[6]
         self.visited_points.append([x, y, temp, self.t, self.filament_on_roll])
-        
 
     def plot(self):
         pts = np.array(self.visited_points)
@@ -149,16 +147,15 @@ class Printer(object):
                 vel_y = 0
                 self.h_flag = True
             self.x[2], self.x[3] = to_motor(vel_x, vel_y, self.c["r_m"])
-    
+
     # not extremly accurate since it might not actually be in Printing state at that point but step -1 or +1
     def filament_usage(self):
         if isinstance(self.state, PrintingState) and len(self.visited_points) > 2:
             x0, y0 = self.visited_points[-2][:2]
             x1, y1 = self.visited_points[-1][:2]
-            self.filament_on_roll -= np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
+            self.filament_on_roll -= np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
         self.filament_empty_flag = self.filament_on_roll < 10
-            
-        
+
     def feedback(self, x_ref, y_ref, heating, kp=0.1):
         # For now ill try with a p controller
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
@@ -178,16 +175,16 @@ class Printer(object):
 
         self.u = np.array([kp * e_l, kp * e_r, heating_value])
         return abs(e_l) < 1e-3 and abs(e_r) < 1e-3 and temp_at_target
-    
+
     def homing_flags_reset(self):
         self.h_flag = True
         self.v_flag + True
 
 
 if __name__ == "__main__":
-    printer = Printer()
-    # printer.add_sim_event("C", True, printer.t + 20)
-    # printer.add_sim_event("F", True, printer.t + 100)
+    SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
 
+    printer = Printer()
+    printer.target_points = SQUARE
     printer.run(300)
     printer.plot()
