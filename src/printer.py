@@ -13,7 +13,7 @@ class Printer(object):
     """
 
     t = 0
-    dt = 0.1
+    dt = 0.01
     filament_loaded_flag = False
     filament_retracted_flag = False
     filament_empty_flag = False
@@ -74,14 +74,6 @@ class Printer(object):
     def on_event(self, event, value):
         if event == "C":
             self.filament_color_change_flag = value
-        elif event == "F":
-            self.filament_empty_flag = value
-        elif event == "wiping_done":
-            self.wiping_done = value
-        elif event == "retracted":
-            self.filament_retracted_flag = value
-        elif event == "loaded":
-            self.filament_loaded_flag = value
 
     def process_sim_events(self):
         for event, value, time_delay in self.simulation_events:
@@ -100,7 +92,7 @@ class Printer(object):
 
     def add_telemetry(self):
         self.visited_points.append(np.append(self.x, self.t))
-        
+
     def plot(self):
         print(self.visited_points[0])
         pts = np.array(self.visited_points)
@@ -110,16 +102,16 @@ class Printer(object):
         _, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
         ax1.plot(x, y)
         ax1.set_title("Toolhead path")
-        
+
         ax2.plot(t, pts[:, 6])
         ax2.set_title("Nozzle temperature")
-        
+
         ax3.plot(t, pts[:, 9])
         ax3.set_title("Filament on roll")
+        plt.tight_layout()
         plt.show()
 
     def sys(self, t, x, u):
-        # dx = self.A @ x + self.B @ u
         dx = np.zeros(10)
         dx[:6] = self.A @ x[:6] + self.B @ u[:2]
         T, v, i = x[6], x[7], x[8]
@@ -157,34 +149,36 @@ class Printer(object):
                 self.h_flag = True
             self.x[2], self.x[3] = to_motor(vel_x, vel_y, self.c["r_m"])
 
-    # not extremly accurate since it might not actually be in Printing state at that point but step -1 or +1
     def filament_usage(self):
-        # print(self.filament_empty_flag)
         self.filament_empty_flag = self.x[9] < 0
         self.filament_retracted_flag = self.x[9] > 10
         self.filament_loaded_flag = self.x[9] < self.new_roll - 10
         self.wiping_done = self.x[9] < -10
-        # print(self.x[9])
+        
+    def feedback(self, x_ref, y_ref, heater):
+        temp = self.heater(heater)
+        pos = self.move_to(x_ref, y_ref)
+        return  pos and temp
+        
 
-    def feedback(self, x_ref, y_ref, heating, kp=0.1):
-        # For now ill try with a p controller
+    def move_to(self, x_ref, y_ref, kp=0.1):
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
+        self.u[0:2] = np.array([kp * e_l, kp * e_r])
+        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3
 
-        heating_on_voltage = 0
-        temp_at_target = False
-        if heating:
-            if self.x[6] < self.t_target_on:
-                heating_on_voltage = self.c["V_n"]
+    def heater(self, status):
+        T = self.x[6]
+        if status:
+            if T < self.t_target_on:
+                self.u[2] = self.c["V_n"]
             else:
-                temp_at_target = True
-        else:
-            if self.x[6] < self.t_target_off:
-                temp_at_target = True
-
-        self.u = np.array([kp * e_l, kp * e_r, heating_on_voltage])
-        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3 and temp_at_target
+                self.u[2] = 0
+            return T >= self.t_target_on
+        
+        self.u[2] = 0
+        return T < self.t_target_off
 
     def homing_flags_reset(self):
         self.h_flag = True

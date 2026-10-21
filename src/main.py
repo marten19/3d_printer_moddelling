@@ -19,7 +19,7 @@ def sim_square():
 def sim_square_empty_filament():
     printer = Printer()
     printer.target_points = SQUARE
-    printer.x[9] = 0.0001
+    printer.x[9] = 0.00005
     printer.run(10000)
     printer.plot()
 
