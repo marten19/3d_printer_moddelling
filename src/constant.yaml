@@ -30,3 +30,5 @@ filament_width: 0.0004
 
 U_bed: 500
 U_air: 10
+
+V_f: 1

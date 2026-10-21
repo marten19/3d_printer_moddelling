@@ -1,5 +1,5 @@
 from src.state import State
-
+import numpy as np
 
 # Start of our states
 class PrintingState(State):
@@ -19,6 +19,11 @@ class PrintingState(State):
         ):
             return NextPointState()
         return self
+    
+    def filament_rate(self, printer, x):
+        k = printer.c["filament_width"]**2
+        v = printer.c["r_m"] / np.sqrt(2) * np.sqrt(x[2]**2 + x[3]**2)
+        return -k * v
 
 
 class NextPointState(State):
@@ -73,38 +78,42 @@ class ToTowerFState(State):
 
 
 class WipingCState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("wiping_done", True, printer.t + 1)
-
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.wiping_done:
             printer.wiping_done = False
             return RetractFilamentState()
         return self
+    
+    def filament_rate(self, printer, x):
+        return -printer.c["V_f"]
+
+
 
 
 class WipingFState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("wiping_done", True, printer.t + 1)
-
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.wiping_done:
             printer.wiping_done = False
             return CoolingNozzleState()
         return self
+    
+    def filament_rate(self, printer, x):
+        return -printer.c["V_f"]
+
 
 
 class RetractFilamentState(State):
-    def on_enter(self, printer):
-        printer.add_sim_event("retracted", True, printer.t + 2)
-
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.filament_retracted_flag:
             return CoolingNozzleState()
         return self
+    
+    def filament_rate(self, printer, x):
+        return -printer.c["V_f"]
+
 
 
 class CoolingNozzleState(State):
@@ -123,6 +132,12 @@ class LoadFilamentState(State):
         if printer.filament_loaded_flag:
             return HeatingNozzleState()
         return self
+    
+    def filament_rate(self, printer, x):
+        return -printer.c["V_f"]
+    
+
+
 
 
 class HeatingNozzleState(State):

@@ -121,6 +121,18 @@ class Printer(object):
         dx[7] = i / self.c["C_n"] - v / (self.c["C_n"] * self.c["R_n"])
         dx[8] = u[2] / self.c["L_n"] - v / self.c["L_n"]
         return dx
+    
+    def sys(self, t, x, u):
+        # dx = self.A @ x + self.B @ u
+        dx = np.zeros(9)
+        dx[:6] = self.A @ x[:6] + self.B @ u[:2]
+        T, v, i = x[6], x[7], x[8]
+        dx[6] = v**2 / (self.c["C_t_n"] * self.c["R_n"]) - (T - self.c["T_e"]) / (
+            self.c["C_t_n"] * self.c["R_t_n"]
+        )
+        dx[7] = i / self.c["C_n"] - v / (self.c["C_n"] * self.c["R_n"])
+        dx[8] = u[2] / self.c["L_n"] - v / self.c["L_n"]
+        return dx
 
     def step(self):
         sol = solve_ivp(

@@ -7,17 +7,14 @@ class State(object):
     def __init__(self):
         print("Processing current state:", str(self))
 
-    def on_event(self, printer, event):
-        """
-        Handle events that are delegated to this State.
-        """
-        pass
-
     def on_enter(self, printer):
         pass
 
     def on_tick(self, printer):
         return self
+    
+    def filament_rate():
+        return 0.0
 
     def __repr__(self):
         """
