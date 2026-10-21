@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import yaml
 
 time_sim = 10
-plot_num_lines = 8
+plot_num_lines = 10
 
 length = 0.1
 speed = 0.05
@@ -20,15 +20,15 @@ k_prime = k_pla / (rho_pla * C_pla)
 T_e = c["T_e"]
 T_bed = c["T_b"]
 T_n = c["T_n"]
-a = c["filament_width"]
+L_side = c["filament_width"]
 U_bed = c["U_bed"]
 U_air = c["U_air"]
 
 
-A_bed = a * dx
+A_bed = L_side * dx
 A_air = 3 * A_bed
-Volume = dx * a * a
-A = a * a
+Volume = dx * L_side * L_side
+A = L_side * L_side
 
 num_points = int(length / dx)
 num_step = int(time_sim / dt)
@@ -56,7 +56,7 @@ def pde_sim():
         d_T = k_prime * T_gradiant_2 + f_prime
         T = T + dt * d_T
 
-        if not (step % plot_step):
+        if not (step % plot_step) and not step == 0:
             x = np.arange(len(T)) * dx * 1000
             plt.plot(x, T, label=f"t = {step * dt} s")
         step += 1
@@ -66,6 +66,8 @@ def pde_sim():
             break
 
     plt.title("Filament temperature")
+    plt.xlabel("Fillament printed [mm]")
+    plt.ylabel("temperature [°C]")
     plt.legend()
     plt.show()
 

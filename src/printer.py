@@ -162,18 +162,18 @@ class Printer(object):
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
 
-        heating_value = 0
+        heating_on_voltage = 0
         temp_at_target = False
         if heating:
             if self.x[6] < self.t_target_on:
-                heating_value = 30
+                heating_on_voltage = self.c["V_n"]
             else:
                 temp_at_target = True
         else:
             if self.x[6] < self.t_target_off:
                 temp_at_target = True
 
-        self.u = np.array([kp * e_l, kp * e_r, heating_value])
+        self.u = np.array([kp * e_l, kp * e_r, heating_on_voltage])
         return abs(e_l) < 1e-3 and abs(e_r) < 1e-3 and temp_at_target
 
     def homing_flags_reset(self):

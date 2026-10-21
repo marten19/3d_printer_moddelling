@@ -1,6 +1,9 @@
 from src.printer import *
 from src.dynamics import *
-from src.heat import *
+from src.filament_temp_pde import *
+from src.model_nozzle import *
+
+import src
 import argparse
 
 SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
@@ -17,7 +20,7 @@ def sim_square_empty_filament():
     printer = Printer()
     printer.target_points = SQUARE
     printer.filament_on_roll = 150
-    printer.run(300)
+    printer.run(1000)
     printer.plot()
 
 
@@ -36,7 +39,7 @@ def main():
     parser.add_argument(
         "-run",
         required=True,
-        choices=["square", "square_empty", "ellipse", "heart", "pde"],
+        choices=["square", "square_empty", "ellipse", "heart", "pde", "nozzle_step"],
     )
     args = parser.parse_args()
 
@@ -51,7 +54,9 @@ def main():
             heart_input_response()
         case "pde":
             pde_sim()
+        case "nozzle_step":
+            step_response()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     main()
