@@ -1,5 +1,6 @@
 from src.printer import *
 from src.dynamics import *
+from src.heat import *
 import argparse
 
 SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
@@ -33,7 +34,7 @@ def heart_input_response():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run one simulation")
     parser.add_argument(
-        "-run", required=True, choices=["square", "square_empty", "ellipse", "heart"]
+        "-run", required=True, choices=["square", "square_empty", "ellipse", "heart", "pde"]
     )
     args = parser.parse_args()
 
@@ -46,3 +47,5 @@ if __name__ == "__main__":
             ellipse_input_response()
         case "heart":
             heart_input_response()
+        case "pde":
+            pde_sim()

@@ -16,10 +16,16 @@ mu_l_y: 1.0
 
 T_n: 220.0
 T_b: 60.0
-T_e: 20.0 #21.0
+T_e: 21.0
 L_n: 20
 
 d_x: 256.0
 d_y: 256.0
 
-t_tick: 0.1
+k_pla: 0.13
+C_pla: 1800
+rho_pla: 1240
+filament_width: 0.0004
+
+U_bed: 500
+U_air: 10
