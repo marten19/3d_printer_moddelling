@@ -13,7 +13,7 @@ class State(object):
     def on_tick(self, printer):
         return self
     
-    def filament_rate():
+    def filament_rate(self, printer, x):
         return 0.0
 
     def __repr__(self):

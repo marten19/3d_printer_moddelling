@@ -13,7 +13,7 @@ class Printer(object):
     """
 
     t = 0
-    dt = 0.01
+    dt = 0.1
     filament_loaded_flag = False
     filament_retracted_flag = False
     filament_empty_flag = False
@@ -23,10 +23,11 @@ class Printer(object):
     v_flag = False
     target_points = []
     visited_points = []
-    x = np.zeros(9)
+    x = np.zeros(10)
     u = np.ones(3)
     simulation_events = []
-    filament_on_roll = 1000
+    new_roll = 100
+    x[9] = new_roll
 
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
@@ -98,21 +99,28 @@ class Printer(object):
                 break
 
     def add_telemetry(self):
-        x, y = to_corexy(self.x[0], self.x[1], self.c["r_m"])
-        temp = self.x[6]
-        self.visited_points.append([x, y, temp, self.t, self.filament_on_roll])
-
+        self.visited_points.append(np.append(self.x, self.t))
+        
     def plot(self):
+        print(self.visited_points[0])
         pts = np.array(self.visited_points)
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 4))
-        ax1.plot(pts[:, 0], pts[:, 1])
-        ax2.plot(pts[:, 3], pts[:, 2])
-        ax3.plot(pts[:, 3], pts[:, 4])
+        t = pts[:, 10]
+        x, y = to_corexy(pts[:, 0], pts[:, 1], self.c["r_m"])
+
+        _, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+        ax1.plot(x, y)
+        ax1.set_title("Toolhead path")
+        
+        ax2.plot(t, pts[:, 6])
+        ax2.set_title("Nozzle temperature")
+        
+        ax3.plot(t, pts[:, 9])
+        ax3.set_title("Filament on roll")
         plt.show()
 
     def sys(self, t, x, u):
         # dx = self.A @ x + self.B @ u
-        dx = np.zeros(9)
+        dx = np.zeros(10)
         dx[:6] = self.A @ x[:6] + self.B @ u[:2]
         T, v, i = x[6], x[7], x[8]
         dx[6] = v**2 / (self.c["C_t_n"] * self.c["R_n"]) - (T - self.c["T_e"]) / (
@@ -120,18 +128,7 @@ class Printer(object):
         )
         dx[7] = i / self.c["C_n"] - v / (self.c["C_n"] * self.c["R_n"])
         dx[8] = u[2] / self.c["L_n"] - v / self.c["L_n"]
-        return dx
-    
-    def sys(self, t, x, u):
-        # dx = self.A @ x + self.B @ u
-        dx = np.zeros(9)
-        dx[:6] = self.A @ x[:6] + self.B @ u[:2]
-        T, v, i = x[6], x[7], x[8]
-        dx[6] = v**2 / (self.c["C_t_n"] * self.c["R_n"]) - (T - self.c["T_e"]) / (
-            self.c["C_t_n"] * self.c["R_t_n"]
-        )
-        dx[7] = i / self.c["C_n"] - v / (self.c["C_n"] * self.c["R_n"])
-        dx[8] = u[2] / self.c["L_n"] - v / self.c["L_n"]
+        dx[9] = self.state.filament_rate(self, x)
         return dx
 
     def step(self):
@@ -162,11 +159,12 @@ class Printer(object):
 
     # not extremly accurate since it might not actually be in Printing state at that point but step -1 or +1
     def filament_usage(self):
-        if isinstance(self.state, PrintingState) and len(self.visited_points) > 2:
-            x0, y0 = self.visited_points[-2][:2]
-            x1, y1 = self.visited_points[-1][:2]
-            self.filament_on_roll -= np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
-        self.filament_empty_flag = self.filament_on_roll < 10
+        # print(self.filament_empty_flag)
+        self.filament_empty_flag = self.x[9] < 0
+        self.filament_retracted_flag = self.x[9] > 10
+        self.filament_loaded_flag = self.x[9] < self.new_roll - 10
+        self.wiping_done = self.x[9] < -10
+        # print(self.x[9])
 
     def feedback(self, x_ref, y_ref, heating, kp=0.1):
         # For now ill try with a p controller

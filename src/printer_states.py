@@ -12,7 +12,6 @@ class PrintingState(State):
             printer.filament_color_change_flag = False
             return StopCState()
         elif printer.filament_empty_flag:
-            printer.filament_empty_flag = False
             return StopCState()
         elif printer.feedback(
             printer.target_points[0][0], printer.target_points[0][1], True
@@ -78,6 +77,9 @@ class ToTowerFState(State):
 
 
 class WipingCState(State):
+    def on_enter(self, printer):
+        printer.x[9] = 0
+        
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.wiping_done:
@@ -92,6 +94,9 @@ class WipingCState(State):
 
 
 class WipingFState(State):
+    def on_enter(self, printer):
+        printer.x[9] = 0
+        
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.wiping_done:
@@ -105,6 +110,9 @@ class WipingFState(State):
 
 
 class RetractFilamentState(State):
+    def on_enter(self, printer):
+        printer.x[9] = 0
+        
     def on_tick(self, printer):
         printer.feedback(0, 0, True)
         if printer.filament_retracted_flag:
@@ -112,9 +120,7 @@ class RetractFilamentState(State):
         return self
     
     def filament_rate(self, printer, x):
-        return -printer.c["V_f"]
-
-
+        return printer.c["V_f"]
 
 class CoolingNozzleState(State):
     def on_tick(self, printer):
@@ -122,12 +128,10 @@ class CoolingNozzleState(State):
             return LoadFilamentState()
         return self
 
-
 class LoadFilamentState(State):
     def on_enter(self, printer):
-        printer.filament_on_roll = 1000
-        printer.add_sim_event("loaded", True, printer.t + 1)
-
+        printer.x[9] = printer.new_roll
+        
     def on_tick(self, printer):
         if printer.filament_loaded_flag:
             return HeatingNozzleState()
