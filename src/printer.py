@@ -50,7 +50,7 @@ class Printer(object):
     )
 
     def __init__(self):
-        self.state = PrintingState()
+        self.state = StartState()
 
     def tick(self):
         new_state = self.state.on_tick(self)
@@ -154,18 +154,17 @@ class Printer(object):
         self.filament_retracted_flag = self.x[9] > 10
         self.filament_loaded_flag = self.x[9] < self.new_roll - 10
         self.wiping_done = self.x[9] < -10
-        
+
     def feedback(self, x_ref, y_ref, heater):
         temp = self.heater(heater)
         pos = self.move_to(x_ref, y_ref)
-        return  pos and temp
-        
+        return pos and temp
 
-    def move_to(self, x_ref, y_ref, kp=0.1):
+    def move_to(self, x_ref, y_ref, kp=0.8, kd=0.05):
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
-        self.u[0:2] = np.array([kp * e_l, kp * e_r])
+        self.u[0:2] = np.array([kp * e_l - kd * self.x[2], kp * e_r - kd * self.x[3]])
         return abs(e_l) < 1e-3 and abs(e_r) < 1e-3
 
     def heater(self, status):
@@ -176,7 +175,7 @@ class Printer(object):
             else:
                 self.u[2] = 0
             return T >= self.t_target_on
-        
+
         self.u[2] = 0
         return T < self.t_target_off
 

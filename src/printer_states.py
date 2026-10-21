@@ -1,7 +1,13 @@
 from src.state import State
 import numpy as np
 
-# Start of our states
+class StartState(State):
+    def on_tick(self, printer):
+        printer.x_saved, printer.y_saved = printer.target_points[0] 
+        if printer.filament_empty_flag:
+            return ToTowerFState()
+        return HeatingNozzleState()
+    
 class PrintingState(State):
     """
     The state which indicates that there are limited device capabilities.
