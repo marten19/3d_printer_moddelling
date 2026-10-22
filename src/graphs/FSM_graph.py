@@ -60,7 +60,7 @@ graph = machine.get_graph()
 ACCEPTING = {"printing"}
 
 graph = machine.get_graph()
-graph.graph_attr["rankdir"] = "LR"
+graph.graph_attr["rankdir"] = "TB"
 
 if hasattr(graph, "get_node"):
     for name, text in subcomments.items():

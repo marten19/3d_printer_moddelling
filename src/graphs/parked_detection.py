@@ -37,7 +37,7 @@ subcomments = {
 ACCEPTING = {"q3"}
 
 graph = machine.get_graph()
-# graph.graph_attr["rankdir"] = "LR"
+graph.graph_attr["rankdir"] = "LR"
 
 if hasattr(graph, "get_node"):
     for name, text in subcomments.items():
