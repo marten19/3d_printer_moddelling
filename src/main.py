@@ -6,8 +6,7 @@ from src.model_nozzle import *
 import src
 import argparse
 
-SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
-
+SQUARE = [(0.01, 0.01), (0.1, 0.01), (0.1, 0.1), (0.01, 0.1), (0.01, 0.01)]
 
 def sim_square():
     printer = Printer()
@@ -19,18 +18,19 @@ def sim_square():
 def sim_square_empty_filament():
     printer = Printer()
     printer.target_points = SQUARE
-    printer.x[9] = 0.00005
+    printer.new_roll = 1.5
+    printer.x[9] = 0.001
     printer.run(10000)
     printer.plot()
 
 
-def ellipse_input_response():
-    U, X0 = ellipse_input()
+def ellipse_input_response(K=1, L=3):
+    U, X0 = ellipse_input(K,L)
     input_response(U, X0)
 
 
-def heart_input_response():
-    U, X0 = heart_input()
+def heart_input_response(K=5):
+    U, X0 = heart_input(K)
     input_response(U, X0)
 
 
@@ -41,6 +41,7 @@ def main():
         required=True,
         choices=["square", "square_empty", "ellipse", "heart", "pde", "nozzle_step"],
     )
+    parser.add_argument("params", nargs="*", type=float)
     args = parser.parse_args()
 
     match args.run:
@@ -49,13 +50,13 @@ def main():
         case "square_empty":
             sim_square_empty_filament()
         case "ellipse":
-            ellipse_input_response()
+            ellipse_input_response(*args.params)
         case "heart":
-            heart_input_response()
+            heart_input_response(*args.params)
         case "pde":
             pde_sim()
         case "nozzle_step":
-            step_response()
+            step_response(*args.params)
 
 
 if __name__ == "__main__":    

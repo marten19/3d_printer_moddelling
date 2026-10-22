@@ -11,14 +11,26 @@ machine = GraphMachine(
 
 machine.add_transition("(H,0)", "q0", "q1")
 machine.add_transition("(V,0)", "q0", "q2")
+machine.add_transition("(V,+)", "q0", "q0")
+machine.add_transition("(H,+)", "q0", "q0")
 machine.add_transition("(V,0)", "q1", "q3")
+machine.add_transition("(H,+)", "q1", "q1")
+machine.add_transition("(H,0)", "q1", "q1")
+machine.add_transition("(V,+)", "q1", "q1")
 machine.add_transition("(H,0)", "q2", "q3")
+machine.add_transition("(V,+)", "q2", "q2")
+machine.add_transition("(V,0)", "q2", "q2")
+machine.add_transition("(H,+)", "q2", "q2")
+machine.add_transition("(H,+)", "q3", "q3")
+machine.add_transition("(H,0)", "q3", "q3")
+machine.add_transition("(V,+)", "q3", "q3")
+machine.add_transition("(V,0)", "q3", "q3")
 
 
 subcomments = {
     "q0": "q0\n x=+, y=+",
-    "q1": "q1\n x=+, y=0",
-    "q2": "q2\n x=0, y=+",
+    "q1": "q1\n x=0, y=+",
+    "q2": "q2\n x=+, y=0",
     "q3": "q3\n x=0, y=0",
 }
 

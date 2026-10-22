@@ -59,8 +59,7 @@ def ellipse_input(K=1, L=3):
     return U, X0
 
 
-def heart_input():
-    K = 10
+def heart_input(K = 10):
     # x = K * (12 * sin_omega_t - 4 * np.sin(3 * omega * t))
     d_x = K * omega * (12 * cos_omega_t - 12 * np.cos(3 * omega * t))
     dd_x = K * omega**2 * (-12 * sin_omega_t + 36 * np.sin(3 * omega * t))

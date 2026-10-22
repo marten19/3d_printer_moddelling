@@ -9,10 +9,6 @@ class StartState(State):
         return HeatingNozzleState()
     
 class PrintingState(State):
-    """
-    The state which indicates that there are limited device capabilities.
-    """
-
     def on_tick(self, printer):
         if printer.filament_color_change_flag:
             printer.filament_color_change_flag = False
