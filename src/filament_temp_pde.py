@@ -39,7 +39,6 @@ def pde_sim():
     T = np.array([T_n])
     step = 0
     while step < num_step:
-        # print(t)
         if len(T) < speed * step * dt / dx + 1 and len(T) < num_points:
             T = np.append(T, [T_n])
 

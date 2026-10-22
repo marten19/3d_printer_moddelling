@@ -94,7 +94,6 @@ class Printer(object):
         self.visited_points.append(np.append(self.x, self.t))
 
     def plot(self):
-        print(self.visited_points[0])
         pts = np.array(self.visited_points)
         t = pts[:, 10]
         x, y = to_corexy(pts[:, 0], pts[:, 1], self.c["r_m"])
@@ -160,12 +159,12 @@ class Printer(object):
         pos = self.move_to(x_ref, y_ref)
         return pos and temp
 
-    def move_to(self, x_ref, y_ref, kp=0.1, kd=0.05):
+    def move_to(self, x_ref, y_ref, kp=2, kd=0.1):
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
         self.u[0:2] = np.array([kp * e_l - kd * self.x[2], kp * e_r - kd * self.x[3]])
-        return abs(e_l) < 1e-3 and abs(e_r) < 1e-3
+        return abs(e_l) < 1e-2 and abs(e_r) < 1e-2
 
     def heater(self, status):
         T = self.x[6]
@@ -178,11 +177,6 @@ class Printer(object):
 
         self.u[2] = 0
         return T < self.t_target_off
-
-    def homing_flags_reset(self):
-        self.h_flag = True
-        self.v_flag + True
-
 
 if __name__ == "__main__":
     SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]

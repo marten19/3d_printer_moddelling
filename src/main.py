@@ -19,7 +19,7 @@ def sim_square_empty_filament():
     printer = Printer()
     printer.target_points = SQUARE
     printer.new_roll = 1.5
-    printer.x[9] = 0.001
+    printer.x[9]  = printer.c["filament_width"]**2 * 0.09 * 2.5
     printer.run(10000)
     printer.plot()
 
