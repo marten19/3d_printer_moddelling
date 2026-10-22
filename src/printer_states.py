@@ -61,11 +61,7 @@ class ToTowerCState(State):
         printer.homing_flags_reset()
 
     def on_tick(self, printer):
-        # printer.feedback(-100, -100, True)
-        printer.u[0] = -500
-        printer.u[1] = 0
-        print(printer.x[0],printer.x[1])
-        print(printer.h_flag, printer.v_vlag)
+        printer.feedback(-100, -100, True)
         if printer.h_flag and printer.v_flag:
             return WipingCState()
         return self
@@ -76,9 +72,7 @@ class ToTowerFState(State):
         printer.homing_flags_reset()
 
     def on_tick(self, printer):
-        # printer.feedback(-100, -100, True)
-        printer.u[0] = -500
-        printer.u[1] = 0
+        printer.feedback(-100, -100, True)
         print(printer.x[0],printer.x[1])
         if printer.h_flag and printer.v_flag:
             return WipingFState()
