@@ -5,7 +5,6 @@ import yaml
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-
 class Printer(object):
     """
     A simple state machine that mimics the functionality of a device from a
@@ -13,7 +12,7 @@ class Printer(object):
     """
 
     t = 0
-    dt = 0.01
+    dt = 0.001
     filament_loaded_flag = False
     filament_retracted_flag = False
     filament_empty_flag = False
@@ -91,22 +90,49 @@ class Printer(object):
                 break
 
     def add_telemetry(self):
-        self.visited_points.append(np.append(self.x, self.t))
+        snapshot = [self.x.copy(), self.t, type(self.state).__name__]
+        self.visited_points.append(snapshot)
 
     def plot(self):
-        pts = np.array(self.visited_points)
-        t = pts[:, 10]
-        x, y = to_corexy(pts[:, 0], pts[:, 1], self.c["r_m"])
+        X = np.array([p[0] for p in self.visited_points])
+        t = np.array([p[1] for p in self.visited_points])
+        states = [p[2] for p in self.visited_points]
+
+        x, y = to_corexy(X[:, 0], X[:, 1], self.c["r_m"])
+
+        colors = {
+            "StartState": "blue",
+            "PrintingState": "gray",
+            "NextPointState": "green",
+            "StopIdleState": "black",
+            "StopCState": "red",
+            "StopFState": "darkred",
+            "ToTowerCState": "orange",
+            "ToTowerFState": "darkorange",
+            "WipingCState": "purple",
+            "WipingFState": "violet",
+            "RetractFilamentState": "brown",
+            "CoolingNozzleState": "cyan",
+            "LoadFilamentState": "olive",
+            "HeatingNozzleState": "magenta",
+            "ResumeState": "lime",
+        }
+
+        c = []
+        for s in states:
+            c.append(colors[s])
 
         _, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
-        ax1.plot(x, y)
+        ax1.scatter(x, y, c=c, s=3)
+        ax2.scatter(t, X[:, 6], c=c, s=3)
+        ax3.scatter(t, X[:, 9], c=c, s=3)
+
         ax1.set_title("Toolhead path")
-
-        ax2.plot(t, pts[:, 6])
         ax2.set_title("Nozzle temperature")
-
-        ax3.plot(t, pts[:, 9])
         ax3.set_title("Filament on roll")
+        ax2.set_xlabel("t [s]")
+        ax3.set_xlabel("t [s]")
+
         plt.tight_layout()
         plt.show()
 
@@ -159,7 +185,7 @@ class Printer(object):
         pos = self.move_to(x_ref, y_ref)
         return pos and temp
 
-    def move_to(self, x_ref, y_ref, kp=2, kd=0.1):
+    def move_to(self, x_ref, y_ref, kp=1, kd=0.05):
         theta_l, theta_r = to_motor(x_ref, y_ref, self.c["r_m"])
         e_l = theta_l - self.x[0]
         e_r = theta_r - self.x[1]
@@ -177,6 +203,7 @@ class Printer(object):
 
         self.u[2] = 0
         return T < self.t_target_off
+
 
 if __name__ == "__main__":
     SQUARE = [(10, 10), (100, 10), (100, 100), (10, 100), (10, 10)]
