@@ -17,7 +17,7 @@ C_pla = c["C_pla"]
 rho_pla = c["rho_pla"]
 k_prime = k_pla / (rho_pla * C_pla)
 
-T_e = c["T_e"]
+T_e = 21 #c["T_e"]
 T_bed = c["T_b"]
 T_n = c["T_n"]
 L_side = c["filament_width"]

@@ -31,7 +31,7 @@ class Printer(object):
     c = yaml.safe_load(open("src/constant.yaml"))
     J_eq = c["J_m"] + 0.5 * c["m"] * c["r_m"] ** 2
     t_target_on = c["T_n"]
-    t_target_off = 40
+    t_target_off = 60
 
     A = np.array(
         [
@@ -101,20 +101,20 @@ class Printer(object):
         x, y = to_corexy(X[:, 0], X[:, 1], self.c["r_m"])
 
         colors = {
-            "StartState": "blue",
-            "PrintingState": "gray",
+            "StartState": "black",
+            "PrintingState": "darkgreen",
             "NextPointState": "green",
             "StopIdleState": "black",
-            "StopCState": "red",
+            "StopCState": "darkred",
             "StopFState": "darkred",
             "ToTowerCState": "orange",
             "ToTowerFState": "darkorange",
             "WipingCState": "purple",
             "WipingFState": "violet",
             "RetractFilamentState": "brown",
-            "CoolingNozzleState": "cyan",
+            "CoolingNozzleState": "blue",
             "LoadFilamentState": "olive",
-            "HeatingNozzleState": "magenta",
+            "HeatingNozzleState": "red",
             "ResumeState": "lime",
         }
 
@@ -122,20 +122,28 @@ class Printer(object):
         for s in states:
             c.append(colors[s])
 
-        _, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
-        ax1.scatter(x, y, c=c, s=3)
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+        ax1.scatter(x, y, c=c, s=2)
         ax2.scatter(t, X[:, 6], c=c, s=3)
         ax3.scatter(t, X[:, 9], c=c, s=3)
 
         ax1.set_title("Toolhead path")
+        ax1.set_xlabel("x")
+        ax1.set_ylabel("y")
         ax2.set_title("Nozzle temperature")
         ax3.set_title("Filament on roll")
         ax2.set_xlabel("t [s]")
         ax3.set_xlabel("t [s]")
 
-        plt.tight_layout()
-        plt.show()
+        for s in colors:
+            if s in states:
+                ax1.scatter([], [], color=colors[s], label=s)
+        fig.legend(loc="lower center", ncol=5)
 
+        plt.tight_layout(rect=(0, 0.1, 1, 1))
+        # plt.tight_layout()
+        plt.show()
+        
     def sys(self, t, x, u):
         dx = np.zeros(10)
         dx[:6] = self.A @ x[:6] + self.B @ u[:2]
